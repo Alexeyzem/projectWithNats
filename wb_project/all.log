@@ -1,0 +1,6 @@
+time="2023-09-09T23:38:57+03:00" level=info msg="Connect to nats" func="main.main()" file="main.go:19"
+time="2023-09-09T23:38:57+03:00" level=info msg="create Cache" func="wb_project/pkg/user.NewCache()" file="user.go:48"
+time="2023-09-09T23:38:57+03:00" level=info msg="Registration subscribe" func="main.main()" file="main.go:28"
+time="2023-09-09T23:38:57+03:00" level=info msg="start server with addres :8080" func="main.main()" file="main.go:46"
+time="2023-09-09T23:39:03+03:00" level=error msg="error with template: template: index.html:11:34: executing \"index.html\" at <.ID>: can't evaluate field ID in type struct { uid string }" func="wb_project/pkg/handlers.(*UserHandler).Handler()" file="handler.go:25"
+time="2023-09-09T23:39:05+03:00" level=error msg="error with template: template: index.html:11:34: executing \"index.html\" at <.ID>: can't evaluate field ID in type struct { uid string }" func="wb_project/pkg/handlers.(*UserHandler).Handler()" file="handler.go:25"
