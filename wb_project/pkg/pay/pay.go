@@ -1,6 +1,8 @@
 package pay
 
 type Pay struct {
+	ID           int    `json:id`
+	UserId       int    `json:user_id`
 	Transaction  string `json: transaction`
 	RequestId    string `json: request_id `
 	Currency     string `json: currency`

@@ -10,3 +10,10 @@ type StorageConfig struct {
 	Database string
 	Lg       *logging.Logger
 }
+type Config struct {
+	storage StorageConfig
+}
+
+func GetConfig() Config {
+	return Config{}
+}

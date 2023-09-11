@@ -12,6 +12,7 @@ import (
 )
 
 type User struct {
+	ID                int               `json:id`
 	OrderUid          string            `json:order_uid`
 	TrackNumber       string            `json: track_number`
 	Entry             string            `json: entry`
