@@ -5,3 +5,4 @@ for start this project
 2) start postgresql in docker: docker run --name postgresql -p <port:port> -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=<nameDB> -d postgres:13.3
 3) Create table with code from data.sql
 4) located in the root directory of the project start in terminal: go run cmd/main.go
+5) P.S. for testing in real time you can start nats-script. It send some test data to nats-streaming server. Script in nats_script.txt
