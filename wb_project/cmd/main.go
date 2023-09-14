@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"wb_project/pkg/client/postgresql"
@@ -65,7 +67,7 @@ func main() {
 	sub, err := nc.Subscribe("events.*", func(msg *nats.Msg) {
 		err := goToBD(msg.Data, cache, &repo)
 		if err != nil {
-			lg.Errorf("wrong data:%v with err:%v", msg.Data, err)
+			lg.Errorf("wrong data:%s with err:%v", string(msg.Data), err)
 		}
 	})
 	if err != nil {
@@ -82,22 +84,27 @@ func main() {
 		DB:       &repo,
 	}
 	r := mux.NewRouter()
-	addr := ":8080"
+	addr := ":9080"
 	r.HandleFunc("/", userHandler.Handler).Methods("GET")
 	lg.Infof("start server with addres %v", addr)
 	err = http.ListenAndServe(addr, r)
 	if err != nil {
-		lg.Fatal("can not start server")
+		lg.Fatal("can not start server", err)
 	}
 }
 
 func goToBD(data []byte, cache *user.UserCache, repo *fullrepo.FullRepo) error {
 	var u user.User
-
+	if data[0] != '{' {
+		a := strings.IndexByte(string(data), '{')
+		data = data[a:]
+	}
+	fmt.Println(string(data))
 	err := json.Unmarshal(data, &u)
 	if err != nil {
 		return err
 	}
+	fmt.Println(u)
 	err = repo.RepoU.Create(context.Background(), &u)
 	if err != nil {
 		return err

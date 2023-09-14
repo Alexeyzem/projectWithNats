@@ -58,6 +58,16 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("We dont have info about this uuid:" + order))
 			return
 		}
+		p, err := h.DB.RepoP.FindOne(context.Background(), u.ID)
+		u.Payment = p
+		i, err := h.DB.RepoI.FindAllOfOneUser(context.Background(), u.TrackNumber)
+		u.Items = i
+		d, err := h.DB.RepoD.FindOne(context.Background(), u.ID)
+		u.Deliv = d
+		if err != nil {
+			w.Write([]byte("We dont have full info about this user."))
+			return
+		}
 		out, err := json.Marshal(u)
 		if err != nil {
 			h.Lg.Errorf("can not marshal data:%v", err)

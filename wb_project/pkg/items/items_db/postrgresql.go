@@ -2,6 +2,7 @@ package itemsdb
 
 import (
 	"context"
+	"fmt"
 	"wb_project/pkg/client/postgresql"
 	"wb_project/pkg/items"
 	"wb_project/pkg/logging"
@@ -53,9 +54,9 @@ func (d *db) FindAll(ctx context.Context) (i []items.Item, err error) {
 // FindAllOfOneUser implements items.Repository.
 func (d *db) FindAllOfOneUser(ctx context.Context, track_number string) ([]items.Item, error) {
 	q := `
-		SELECT * FROM public.items WHERE track_number = $1	
+		SELECT * FROM public.items WHERE track_number = $1
 	`
-	i, err := d.find(ctx, q)
+	i, err := d.find(ctx, q, track_number)
 	if err != nil {
 		return nil, err
 	}
@@ -74,9 +75,10 @@ func NewRepository(client postgresql.Client, logger *logging.Logger) items.Repos
 	}
 }
 
-func (d *db) find(ctx context.Context, q string) ([]items.Item, error) {
-	rows, err := d.client.Query(ctx, q)
+func (d *db) find(ctx context.Context, q string, track_number ...interface{}) ([]items.Item, error) {
+	rows, err := d.client.Query(ctx, q, track_number[0])
 	if err != nil {
+		d.logger.Error(err)
 		return nil, err
 	}
 	i := make([]items.Item, 0)
@@ -90,6 +92,7 @@ func (d *db) find(ctx context.Context, q string) ([]items.Item, error) {
 		i = append(i, it)
 
 	}
+	fmt.Println(i)
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
