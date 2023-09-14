@@ -7,15 +7,15 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"wb_project/pkg/cashe"
 	"wb_project/pkg/fullrepo"
 	"wb_project/pkg/logging"
-	"wb_project/pkg/user"
 )
 
 type UserHandler struct {
 	Tmpl     *template.Template
 	Lg       *logging.Logger
-	UserRepo *user.UserCache
+	UserRepo *cashe.UserCache
 	DB       *fullrepo.FullRepo
 }
 
@@ -38,6 +38,7 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`internal error with this uid: "` + order + `", sorry. We are working to fix`))
 			return
 		}
+		h.Lg.Info("Data from cache.")
 		w.Write(out)
 		return
 	} else {
@@ -58,9 +59,15 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("We dont have info about this uuid:" + order))
 			return
 		}
-		p, err := h.DB.RepoP.FindOne(context.Background(), u.ID)
+		p, errP := h.DB.RepoP.FindOne(context.Background(), u.ID)
+		if errP != nil {
+			return
+		}
 		u.Payment = p
 		i, err := h.DB.RepoI.FindAllOfOneUser(context.Background(), u.TrackNumber)
+		if err != nil {
+			return
+		}
 		u.Items = i
 		d, err := h.DB.RepoD.FindOne(context.Background(), u.ID)
 		u.Deliv = d
@@ -75,6 +82,7 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		h.Lg.Info("data from db")
 		w.Write(out)
 	}
 }

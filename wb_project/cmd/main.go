@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"wb_project/pkg/cashe"
 	"wb_project/pkg/client/postgresql"
 	"wb_project/pkg/config"
 	"wb_project/pkg/fullrepo"
@@ -60,8 +61,8 @@ func main() {
 
 	defer nc.Close()
 
-	cache := user.NewCache(2*time.Minute, 3*time.Minute)
-	cache.LoadFile("some path to DB")
+	cache := cashe.NewCache(2*time.Minute, 3*time.Minute)
+	cache.LoadFile(&repo, 2*time.Minute)
 	lg.Info("Registration subscribe")
 
 	sub, err := nc.Subscribe("events.*", func(msg *nats.Msg) {
@@ -93,7 +94,7 @@ func main() {
 	}
 }
 
-func goToBD(data []byte, cache *user.UserCache, repo *fullrepo.FullRepo) error {
+func goToBD(data []byte, cache *cashe.UserCache, repo *fullrepo.FullRepo) error {
 	var u user.User
 	if data[0] != '{' {
 		a := strings.IndexByte(string(data), '{')
