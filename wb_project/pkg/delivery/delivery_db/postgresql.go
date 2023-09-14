@@ -65,9 +65,9 @@ func (d *db) FindAll(ctx context.Context) (dv []delivery.Delivery, err error) {
 }
 
 // FindOne implements delivery.Repository.
-func (d *db) FindOne(ctx context.Context, id string) (delivery.Delivery, error) {
+func (d *db) FindOne(ctx context.Context, id int) (delivery.Delivery, error) {
 	q := `
-		SELECT * FROM public.delivery WHERE user_id = &1	
+		SELECT * FROM public.delivery WHERE user_id = $1	
 	`
 	var deliv delivery.Delivery
 	err := d.client.QueryRow(ctx, q, id).Scan(&deliv.ID, &deliv.UserId, &deliv.Name, &deliv.Phone, &deliv.Zip,

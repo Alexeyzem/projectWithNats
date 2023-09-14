@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"net/http"
+	"strings"
+	"wb_project/pkg/fullrepo"
 	"wb_project/pkg/logging"
 	"wb_project/pkg/user"
 )
@@ -12,14 +16,16 @@ type UserHandler struct {
 	Tmpl     *template.Template
 	Lg       *logging.Logger
 	UserRepo *user.UserCache
+	DB       *fullrepo.FullRepo
 }
 
 func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	order := r.URL.Query().Get("order_uid")
+	h.Lg.Infof("uuid: %s", order)
 	err := h.Tmpl.ExecuteTemplate(w, "index.html", struct {
-		uid string
+		Uid string
 	}{
-		uid: order,
+		order,
 	})
 	if err != nil {
 		h.Lg.Errorf("error with template: %v", err)
@@ -30,21 +36,51 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Lg.Errorf("can not marshal data:%v", err)
 			w.Write([]byte(`internal error with this uid: "` + order + `", sorry. We are working to fix`))
+			return
 		}
 		w.Write(out)
+		return
 	} else {
-		find := false
-		// обращение к БД
-		var data user.User
-		if find {
-			out, err := json.Marshal(data)
-			if err != nil {
-				h.Lg.Errorf("can not marshal data:%v", err)
-				w.Write([]byte(`internal error with this UID: "` + order + `", sorry. We are working to fix`))
-			}
-			w.Write(out)
-		} else {
-			w.Write([]byte(`We dont have info about uid: "` + order + `". Check that you entered correct UID`))
+		err := Validation(order)
+		if err != nil {
+			w.Write([]byte("Wrong data. UUID must contain 19 characters and should not contain SQL-query. Try again!"))
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
+		u, err := h.DB.RepoU.FindOne(context.Background(), order)
+		if err != nil {
+			w.Write([]byte("We dont have info about this uuid:" + order))
+			w.WriteHeader(http.StatusBadRequest)
+			h.Lg.Error(err)
+			return
+		}
+		if u.OrderUid != order {
+			w.Write([]byte("We dont have info about this uuid:" + order))
+			return
+		}
+		out, err := json.Marshal(u)
+		if err != nil {
+			h.Lg.Errorf("can not marshal data:%v", err)
+			w.Write([]byte(`internal error with this UID: "` + order + `", sorry. We are working to fix`))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Write(out)
 	}
+}
+
+func Validation(data string) error {
+	var err error = nil
+	if len(data) != 19 {
+		err = errors.New("wrong data")
+	}
+	d := strings.Trim(data, " ")
+	if len(d) != 19 {
+		err = errors.New("wrong data")
+	}
+	d = strings.ToLower(data)
+	if strings.Contains(d, "drop table") {
+		err = errors.New("wrong data")
+	}
+	return err
 }

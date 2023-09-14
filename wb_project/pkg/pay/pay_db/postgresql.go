@@ -66,9 +66,9 @@ func (d *db) FindAll(ctx context.Context) (p []pay.Pay, err error) {
 }
 
 // FindOne implements pay.Repository.
-func (d *db) FindOne(ctx context.Context, id string) (pay.Pay, error) {
+func (d *db) FindOne(ctx context.Context, id int) (pay.Pay, error) {
 	q := `
-		SELECT * FROM public.payment WHERE user_id = &1	
+		SELECT * FROM public.payment WHERE user_id = $1	
 	`
 	var ps pay.Pay
 	err := d.client.QueryRow(ctx, q, id).Scan(&ps.ID, &ps.UserId, &ps.Transaction, &ps.RequestId, &ps.Currency, &ps.Provider,

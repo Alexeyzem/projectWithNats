@@ -53,7 +53,7 @@ func (d *db) FindAll(ctx context.Context) (i []items.Item, err error) {
 // FindAllOfOneUser implements items.Repository.
 func (d *db) FindAllOfOneUser(ctx context.Context, track_number string) ([]items.Item, error) {
 	q := `
-		SELECT * FROM public.items WHERE track_number = &1	
+		SELECT * FROM public.items WHERE track_number = $1	
 	`
 	i, err := d.find(ctx, q)
 	if err != nil {

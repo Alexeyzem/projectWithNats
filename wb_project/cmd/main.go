@@ -6,15 +6,17 @@ import (
 	"html/template"
 	"net/http"
 	"time"
+
 	"wb_project/pkg/client/postgresql"
 	"wb_project/pkg/config"
-	"wb_project/pkg/delivery"
+	"wb_project/pkg/fullrepo"
+
 	deliverydb "wb_project/pkg/delivery/delivery_db"
 	"wb_project/pkg/handlers"
-	"wb_project/pkg/items"
+
 	itemsdb "wb_project/pkg/items/items_db"
 	"wb_project/pkg/logging"
-	"wb_project/pkg/pay"
+
 	paydb "wb_project/pkg/pay/pay_db"
 	"wb_project/pkg/user"
 	"wb_project/pkg/user/db"
@@ -23,40 +25,35 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type FullRepo struct {
-	repoU user.Repository
-	repoP pay.Repository
-	repoI items.Repository
-	repoD delivery.Repository
-}
-
 func main() {
 	lg := logging.GetLogger()
 	url := "nats://0.0.0.0:4222"
-	lg.Info("Connect to nats")
 
 	cfg := config.GetConfig()
+	cfg.Storage.Lg = lg
 
-	postrgeSQLClient, err := postgresql.NewClient(context.TODO(), cfg.Storage, 5)
+	lg.Info("Connect to nats")
+	nc, err := nats.Connect(url)
+	if err != nil {
+		lg.Info("Can not connect to nats")
+		lg.Fatal(err)
+	}
+	lg.Info("Succesfull connect to nats")
+	postrgeSQLClient, err := postgresql.NewClient(context.Background(), cfg.Storage, 5)
 	if err != nil {
 		lg.Fatalf("%v", err)
 	}
+	lg.Info("Succesfull connect to postgresql")
 	repoU := db.NewRepository(postrgeSQLClient, lg)
 	repoP := paydb.NewRepository(postrgeSQLClient, lg)
 	repoI := itemsdb.NewRepository(postrgeSQLClient, lg)
 	repoD := deliverydb.NewRepository(postrgeSQLClient, lg)
 
-	repo := FullRepo{
-		repoU: repoU,
-		repoP: repoP,
-		repoI: repoI,
-		repoD: repoD,
-	}
-
-	nc, err := nats.Connect(url)
-	if err != nil {
-		lg.Info("Can not connect to nats")
-		lg.Fatal(err)
+	repo := fullrepo.FullRepo{
+		RepoU: repoU,
+		RepoP: repoP,
+		RepoI: repoI,
+		RepoD: repoD,
 	}
 
 	defer nc.Close()
@@ -66,15 +63,9 @@ func main() {
 	lg.Info("Registration subscribe")
 
 	sub, err := nc.Subscribe("events.*", func(msg *nats.Msg) {
-		// сделать валидацию данных
-		err := Validation(msg.Data)
+		err := goToBD(msg.Data, cache, &repo)
 		if err != nil {
-			lg.Error("Wrong Data")
-		} else {
-			err := goToBD(msg.Data, cache, repo)
-			if err != nil {
-				lg.Errorf("wrong data:%v with err:%v", msg.Data, err)
-			}
+			lg.Errorf("wrong data:%v with err:%v", msg.Data, err)
 		}
 	})
 	if err != nil {
@@ -88,6 +79,7 @@ func main() {
 		Tmpl:     templates,
 		Lg:       lg,
 		UserRepo: cache,
+		DB:       &repo,
 	}
 	r := mux.NewRouter()
 	addr := ":8080"
@@ -99,18 +91,33 @@ func main() {
 	}
 }
 
-func Validation(msg []byte) error {
-	return nil
-}
-
-func goToBD(data []byte, cache *user.UserCache, repo FullRepo) error {
+func goToBD(data []byte, cache *user.UserCache, repo *fullrepo.FullRepo) error {
 	var u user.User
 
 	err := json.Unmarshal(data, &u)
 	if err != nil {
 		return err
 	}
-	repo.repoU.Create(context.TODO(), &u)
+	err = repo.RepoU.Create(context.Background(), &u)
+	if err != nil {
+		return err
+	}
+	for _, i := range u.Items {
+		err = repo.RepoI.Create(context.Background(), &i)
+		if err != nil {
+			return err
+		}
+	}
+	u.Deliv.UserId = u.ID
+	err = repo.RepoD.Create(context.Background(), &u.Deliv)
+	if err != nil {
+		return err
+	}
+	u.Payment.UserId = u.ID
+	err = repo.RepoP.Create(context.Background(), &u.Payment)
+	if err != nil {
+		return err
+	}
 	cache.Set(u.OrderUid, u, 3*time.Minute)
 	return nil
 }

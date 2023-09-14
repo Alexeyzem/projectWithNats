@@ -10,10 +10,19 @@ type StorageConfig struct {
 	Database string
 	Lg       *logging.Logger
 }
+
 type Config struct {
-	storage StorageConfig
+	Storage StorageConfig
 }
 
-func GetConfig() Config {
-	return Config{}
+func GetConfig() *Config {
+	return &Config{
+		Storage: StorageConfig{
+			Username: "alexey",
+			Password: "alexey",
+			Host:     "0.0.0.0",
+			Port:     "8090",
+			Database: "postgres",
+		},
+	}
 }

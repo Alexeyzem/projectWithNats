@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  wb_project:
+    networks:
+      - backend
+    image: wb_project:1.0.1
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+      - nats
+
+  db:
+    restart: always
+    image: postgres:13.3
+    networks:
+      - backend
+    environment:
+      - POSTGRES_PASSWORD=alexey
+      - POSTGRES_USER=alexey
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./db:/var/lib/postgresql/data
+
+  nats:
+    networks:
+      - backend
+    restart: always
+    image: nats:latest
+
+networks:
+  backend:
+    external: true
