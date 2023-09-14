@@ -10,6 +10,7 @@ import (
 	"wb_project/pkg/cashe"
 	"wb_project/pkg/fullrepo"
 	"wb_project/pkg/logging"
+	"wb_project/pkg/user"
 )
 
 type UserHandler struct {
@@ -22,24 +23,25 @@ type UserHandler struct {
 func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	order := r.URL.Query().Get("order_uid")
 	h.Lg.Infof("uuid: %s", order)
-	err := h.Tmpl.ExecuteTemplate(w, "index.html", struct {
-		Uid string
-	}{
-		order,
-	})
-	if err != nil {
-		h.Lg.Errorf("error with template: %v", err)
-	}
 	u, ok := h.UserRepo.Get(order)
 	if ok {
-		out, err := json.Marshal(u)
+		_, err := json.Marshal(u)
 		if err != nil {
 			h.Lg.Errorf("can not marshal data:%v", err)
 			w.Write([]byte(`internal error with this uid: "` + order + `", sorry. We are working to fix`))
 			return
 		}
+		o := []user.User{u}
 		h.Lg.Info("Data from cache.")
-		w.Write(out)
+		err = h.Tmpl.ExecuteTemplate(w, "index.html", struct {
+			Uid   string
+			Users []user.User
+		}{
+			order, o,
+		})
+		if err != nil {
+			h.Lg.Errorf("error with template: %v", err)
+		}
 		return
 	} else {
 		err := Validation(order)
@@ -72,10 +74,10 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 		d, err := h.DB.RepoD.FindOne(context.Background(), u.ID)
 		u.Deliv = d
 		if err != nil {
-			w.Write([]byte("We dont have full info about this user."))
+			w.Write([]byte("We dont have full info about this user." + order))
 			return
 		}
-		out, err := json.Marshal(u)
+		_, err = json.Marshal(u)
 		if err != nil {
 			h.Lg.Errorf("can not marshal data:%v", err)
 			w.Write([]byte(`internal error with this UID: "` + order + `", sorry. We are working to fix`))
@@ -83,7 +85,16 @@ func (h *UserHandler) Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.Lg.Info("data from db")
-		w.Write(out)
+		o := []user.User{u}
+		err = h.Tmpl.ExecuteTemplate(w, "index.html", struct {
+			Uid   string
+			Users []user.User
+		}{
+			order, o,
+		})
+		if err != nil {
+			h.Lg.Errorf("error with template: %v", err)
+		}
 	}
 }
 

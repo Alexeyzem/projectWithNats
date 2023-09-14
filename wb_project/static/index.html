@@ -5,10 +5,61 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Wildberries</title>
+    <link rel="stylesheet" href='my.css'>
 </head>
 
 <body>
     <h2>Info about user with UID: {{.Uid}}:</h2>
+    {{range .Users}}
+    <p> track_number: {{.TrackNumber}} </p>
+    <p>entry: {{.Entry}} </p>
+    <h4>delivery:{</h4>
+    <p>name: {{.Deliv.Name}} </p>
+    <p>phone: {{.Deliv.Phone}}</p>
+    <p>zip: {{.Deliv.Zip}}</p>
+    <p>city: {{.Deliv.City}}</p>
+    <p>address: {{.Deliv.Address}}</p>
+    <p>region: {{.Deliv.Region}}</p>
+    <p>email: {{.Deliv.Email}}</p>
+    <h4>}</h4>
+    <h4>payment: {</h4>
+    <p>transaction: {{.Payment.Transaction}}</p>
+    <p>request_id: {{.Payment.RequestId}}</p>
+    <p> currency: {{.Payment.Currency}}</p>
+    <p>provider: {{.Payment.Provider}}</p>
+    <p>amount: {{.Payment.Amount}}</p>
+    <p>payment_dt: {{.Payment.PaymentDt}}</p>
+    <p>bank: {{.Payment.Bank}}</p>
+    <p>delivery_cost: {{.Payment.DeliveryCost}}</p>
+    <p>goods_total: {{.Payment.GoodsTotal}}</p>
+    <p>custom_fee:{{.Payment.CustomFee}}</p>
+    <h4>}</h4>
+    <h4>items:{</h4> {{range .Items}}
+    <p>
+    <h5>{</h5> {{.ChrtId}}</p>
+    <p>track_number: {{.TrackNumber}}</p>
+    <p>price: {{.Price}}</p>
+    <p>rid: {{.Rid}}</p>
+    <p>name: {{.Name}}</p>
+    <p>sale: {{.Sale}}</p>
+    <p>size: {{.Size}}</p>
+    <p>total_price: {{.TotalPrice}}</p>
+    <p>nm_id: {{.NmId}}</p>
+    <p>brand: {{.Brand}}</p>
+    <p> status: {{.Status}}
+    <h5>}</h5>
+    </p>
+    {{end}}
+    <h4>}</h4>
+    <p>locale: {{.Locale}}</p>
+    <p> internal_signature: {{.InternalSignature}}</p>
+    <p>customer_id: {{.CustomerID}}</p>
+    <p>delivery_service: {{.DeliveryService}}</p>
+    <p>shardkey: {{.Shardkey}}</p>
+    <p>sm_id: {{.SmId}}</p>
+    <p>date_created: {{.DateCreated}}</p>
+    <p>oof_shard: {{.OofShard}}</p>
+    {{end}}
 </body>
 
 </html>
